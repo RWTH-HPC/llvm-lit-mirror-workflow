@@ -1,0 +1,44 @@
+name: LLVM lit mirror
+
+# Run workflow every day and allow to trigger manually, also run on commit
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Install git filter-repo
+      - name: Install git filter-repo
+        run: |
+          sudo apt-get update
+          sudo apt-get install git-filter-repo
+      # Full checkout of LLVM project via git
+      - name: Checkout LLVM
+        uses: actions/checkout@v2
+        with:
+          repository: llvm/llvm-project
+          ref: main
+          fetch-depth: 0
+      # From the cloned repo, use git filter-repo to select llvm/utils/lit
+      - name: Filter out lit subdirectory
+        run: |
+          git filter-repo --subdirectory-filter llvm/utils/lit
+      # Push the resulting repo via SSH
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - name: Push to target repository
+        run: |
+          git remote add target git@github.com:RWTH-HPC/llvm-lit-mirror.git
+          git push target main
+          git push --tags target
