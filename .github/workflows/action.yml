@@ -21,10 +21,9 @@ jobs:
           sudo apt-get install git-filter-repo
       # Full checkout of LLVM project via git
       - name: Checkout LLVM
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
-          ref: main
           fetch-depth: 0
       # From the cloned repo, use git filter-repo to select llvm/utils/lit
       - name: Filter out lit subdirectory
@@ -40,5 +39,5 @@ jobs:
       - name: Push to target repository
         run: |
           git remote add target git@github.com:RWTH-HPC/llvm-lit-mirror.git
-          git push target main
+          git push target --all
           git push --tags target
